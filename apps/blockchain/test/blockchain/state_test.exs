@@ -64,8 +64,7 @@ defmodule Blockchain.StateTest do
     "Frontier" => [],
     "Homestead" => ["stRevertTest/RevertOpcodeMultipleSubCalls"],
     "SpuriousDragon" => [
-      "stRevertTest/RevertOpcodeMultipleSubCalls",
-      "stSpecialTest/failed_tx_xcf416c53"
+      "stRevertTest/RevertOpcodeMultipleSubCalls"
     ],
     "TangerineWhistle" => ["stRevertTest/RevertOpcodeMultipleSubCalls"]
   }
