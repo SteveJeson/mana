@@ -48,7 +48,7 @@ defmodule EVM.MessageCallTest do
     assert machine_state.memory == <<0x4::256>>
     assert machine_state.gas == message_call.execution_value - 24
     assert machine_state.active_words == pre_machine_state.active_words + 1
-    assert machine_state.stack == pre_machine_state.stack ++ [1]
+    assert has_success_on_stack?(machine_state.stack)
   end
 
   test "transfers value from current account to recipient" do
@@ -101,7 +101,7 @@ defmodule EVM.MessageCallTest do
 
     assert %{machine_state: machine_state} = MessageCall.call(message_call)
     assert machine_state.gas == pre_machine_state.gas + message_call.execution_value
-    assert machine_state.stack == pre_machine_state.stack ++ [0]
+    assert has_failure_on_stack?(machine_state.stack)
   end
 
   test "fails if there aren't enough funds to perform call" do
@@ -116,7 +116,7 @@ defmodule EVM.MessageCallTest do
 
     assert %{machine_state: machine_state} = MessageCall.call(message_call)
     assert machine_state.gas == pre_machine_state.gas + message_call.execution_value
-    assert machine_state.stack == pre_machine_state.stack ++ [0]
+    assert has_failure_on_stack?(machine_state.stack)
   end
 
   test "sets machine_state.active_words" do
@@ -145,5 +145,50 @@ defmodule EVM.MessageCallTest do
     %{machine_state: %{active_words: active_words}} = MessageCall.call(message_call)
 
     assert active_words == 0
+  end
+
+  describe "when recipient address is precompiled contract 3" do
+    test "fails if it runs out of gas" do
+      pre_machine_state = build(:machine_state)
+      precompiled_contract = <<3::160>>
+
+      message_call =
+        build(:message_call,
+          current_machine_state: pre_machine_state,
+          value: 0,
+          code_owner: precompiled_contract,
+          recipient: precompiled_contract
+        )
+
+      assert %{machine_state: machine_state} = MessageCall.call(message_call)
+      assert machine_state.gas == 0
+      assert has_failure_on_stack?(machine_state.stack)
+    end
+
+    test "includes the address in the substate's touched accounts" do
+      pre_machine_state = build(:machine_state)
+      precompiled_contract = <<3::160>>
+
+      message_call =
+        build(:message_call,
+          current_machine_state: pre_machine_state,
+          value: 0,
+          code_owner: precompiled_contract,
+          recipient: precompiled_contract
+        )
+
+      assert %{sub_state: sub_state} = MessageCall.call(message_call)
+      assert Enum.member?(sub_state.touched_accounts, precompiled_contract)
+    end
+  end
+
+  defp has_failure_on_stack?(stack) do
+    {value, _rest} = EVM.Stack.pop(stack)
+    value == 0
+  end
+
+  defp has_success_on_stack?(stack) do
+    {value, _rest} = EVM.Stack.pop(stack)
+    value == 1
   end
 end

@@ -2,7 +2,7 @@ defmodule EVM.MessageCall do
   alias EVM.{AccountRepo, ExecEnv, Memory, Builtin, VM, Functions, MachineState, SubState}
 
   @moduledoc """
-  Describes a message call function that used for all call operations (call, delegatecall, callcode, staticcall).
+  Describes a message call function that is used for all call operations (call, delegatecall, callcode, staticcall).
   """
   defstruct [
     :current_exec_env,
